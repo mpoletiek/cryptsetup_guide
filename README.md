@@ -5,10 +5,11 @@ This guide was created in case Sakaki's guide ever dissapears. Ultimately she ha
 This guide is intended to help a user setup an encrypted drive in Linux using Cryptsetup with password protected keys leveraging GPG.
 
 
-# 1 - Partition the drive
+## 1 - Partition the drive
 
-# Parted Command
-#parted -a optimal /dev/sdc
+First we partition our drive using parted
+
+'parted -a optimal /dev/sdc'
 
 # 2 - Encrypt the drive
 # Create a key using gpg & /dev/urandom
