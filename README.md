@@ -4,17 +4,28 @@ This guide was created in case Sakaki's guide ever dissapears. Ultimately she ha
 
 This guide is intended to help a user setup an encrypted drive in Linux using Cryptsetup with password protected keys leveraging GPG.
 
+This guide is intended for drives you might use for your rootfs and perhaps other partitions your system depends on. 
 
-## 1 - Partition the drive
+Therefore we use a LVM-on-top-of-LUKs setup. This allows us to encrypt a large physical partition and divy it up later.
+
+
+## 1 - Partition the Drive
 
 First we partition our drive using parted
 
-'parted -a optimal /dev/sdc'
+`parted -a optimal /dev/sdc`
 
-# 2 - Encrypt the drive
-# Create a key using gpg & /dev/urandom
-#export GPG_TTY=$(tty)
-#dd if=/dev/urandom bs=8388607 count=1 | gpg --symmetric --cipher-algo AES256 --output /tmp/efiboot/luks-key.gpg
+Using parted is beyond the scope of this guide, but going forward we will use `/dev/sdc1` as an example for our physical partition.
+
+## 2 - Create the GPG Password Protected Key
+
+To allow gpg to work properly in our terminal we must set the following environment variable
+
+`export GPG_TTY=$(tty)`
+
+Now we use `dd` to generate a key we'll use for encryption and password protect it with `gpg`
+
+`dd if=/dev/urandom bs=8388607 count=1 | gpg --symmetric --cipher-algo AES256 --output /tmp/efiboot/luks-key.gpg`
 
 # Use key to encrypt drive partition
 #gpg --decrypt /tmp/efiboot/luks-key.gpg | cryptsetup --cipher serpent-xts-plain64 --key-size 512 --hash whirlpool --key-file - luksFormat /dev/sdZn 
