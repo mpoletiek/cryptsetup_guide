@@ -1,6 +1,6 @@
 # Cryptsetup + GPG Protected Keys
 
-This guide was created in case Sakaki's guide ever dissapears. Ultimately she has abandoned maintaining it and the scope and purpose is much different.
+This guide was created in case [Sakaki's guide](https://wiki.gentoo.org/wiki/User:Sakaki/Sakaki%27s_EFI_Install_Guide) ever dissapears. Ultimately she has abandoned maintaining it and the scope and purpose is much different.
 
 This guide is intended to help a user setup an encrypted drive in Linux using Cryptsetup with password protected key-files leveraging GPG.
 
