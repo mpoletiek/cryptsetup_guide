@@ -91,11 +91,11 @@ home
 
 In order to mount these filesystems via fstab you can follow the example below.
 
-`
+```
 /dev/mapper/vg0-swap    none            swap            sw              0 0
 /dev/mapper/vg0-root    /               btrfs           noatime         0 1
 /dev/mapper/vg0-home    /home           btrfs           noatime         0 3
-`
+```
 
 In order to pass the right commands to your initramfs when booting with grub we set `GRUB_CMDLINE_LINUX` value to something like the following.
 
