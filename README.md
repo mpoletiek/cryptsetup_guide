@@ -52,6 +52,7 @@ Again, store this file someplace safe.
 Just in case all else fails, we can setup a fallback password to decrypt our physical partition.
 
 To prevent secrets from being written to the disk we'll use a named pipe.
+
 ```
 mkfifo /tmp/gpgpipe
 echo RELOADAGENT | gpg-connect-agent
@@ -59,6 +60,7 @@ gpg --decrypt /tmp/luks-key.gpg | cat - >/tmp/gpgpipe
 cryptsetup --key-file /tmp/gpgpipe luksAddKey /dev/sdZn
 rm -vf /tmp/gpgpipe
 ```
+
 ## 5 - Create LVM Groups + Volumes
 
 Now we're ready to open the LUKS partition and build our LVM tables on top of it.
@@ -68,26 +70,36 @@ The `--allow-discards` option is to protect precious SSDs.
 `gpg --decrypt /tmp/luks-key.gpg | cryptsetup --key-file - luksOpen --allow-discards /dev/sdc1 drive`
 
 Now create the physical volume
+
 `pvcreate /dev/mapper/drive`
 
 Create volume group
+
 `vgcreate vg1 /dev/mapper/drive`
 
 Create Logical Volumes
+
 swap
+
 `lvcreate --size 10G --name swap vg1`
+
 root
+
 `lvcreate --size 50G --name root vg1`
+
 home
+
 `lvcreate --extents 95%FREE --name home vg1`
 
 # 6 - Create Filesystems & Mount
+
 ```
 mkswap -L "swap" /dev/mapper/vg1-swap
 swapon /dev/mapper/vg1-swap
 mkfs.btrfs -L "root" /dev/mapper/vg1-root
 mkfs.btrfs -L "home" /dev/mapper/vg1-home
 ```
+
 # 7 - Mounting and Booting
 
 In order to mount these filesystems via fstab you can follow the example below.
@@ -98,6 +110,15 @@ In order to mount these filesystems via fstab you can follow the example below.
 /dev/mapper/vg0-home    /home           btrfs           noatime         0 3
 ```
 
-In order to pass the right commands to your initramfs when booting with grub we set `GRUB_CMDLINE_LINUX` value to something like the following.
+In order to pass the right commands to your initramfs when booting with grub we set `GRUB_CMDLINE_LINUX` value to something like the following. Make sure your initramfs supports GPG protected key-files. For genkernel we build the initramfs with the following command.
+
+`genkernel --luks --lvm --gpg initramfs`
+
+Set up grub-mkconfig for success in `/etc/default/grub`
 
 `GRUB_CMDLINE_LINUX="crypt_root=UUID=3f10f458-b151-4620-a47c-4a6427e6aede dolvm dobtrfs real_root=/dev/mapper/vg0-root root_trim=yes root_keydev=UUID=1DB9-8480 root_key=root0-luks-key.gpg real_resume=/dev/mapper/vg0-swap"`
+
+And install the configuration.
+
+`grub-mkconfig -o /boot/grub/grub.cfg`
+
