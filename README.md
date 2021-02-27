@@ -52,13 +52,13 @@ Again, store this file someplace safe.
 Just in case all else fails, we can setup a fallback password to decrypt our physical partition.
 
 To prevent secrets from being written to the disk we'll use a named pipe.
-
-`mkfifo /tmp/gpgpipe`
-`echo RELOADAGENT | gpg-connect-agent`
-`#gpg --decrypt /tmp/luks-key.gpg | cat - >/tmp/gpgpipe`
-`cryptsetup --key-file /tmp/gpgpipe luksAddKey /dev/sdZn`
-`rm -vf /tmp/gpgpipe`
-
+```
+mkfifo /tmp/gpgpipe
+echo RELOADAGENT | gpg-connect-agent
+gpg --decrypt /tmp/luks-key.gpg | cat - >/tmp/gpgpipe
+cryptsetup --key-file /tmp/gpgpipe luksAddKey /dev/sdZn
+rm -vf /tmp/gpgpipe
+```
 ## 5 - Create LVM Groups + Volumes
 
 Now we're ready to open the LUKS partition and build our LVM tables on top of it.
@@ -82,11 +82,12 @@ home
 `lvcreate --extents 95%FREE --name home vg1`
 
 # 6 - Create Filesystems & Mount
-`mkswap -L "swap" /dev/mapper/vg1-swap`
-`swapon /dev/mapper/vg1-swap`
-`mkfs.btrfs -L "root" /dev/mapper/vg1-root`
-`mkfs.btrfs -L "home" /dev/mapper/vg1-home`
-
+```
+mkswap -L "swap" /dev/mapper/vg1-swap
+swapon /dev/mapper/vg1-swap
+mkfs.btrfs -L "root" /dev/mapper/vg1-root
+mkfs.btrfs -L "home" /dev/mapper/vg1-home
+```
 # 7 - Mounting and Booting
 
 In order to mount these filesystems via fstab you can follow the example below.
