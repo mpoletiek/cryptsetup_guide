@@ -13,7 +13,9 @@ Therefore we use a LVM-on-top-of-LUKS setup. This allows us to encrypt a large p
 
 First we partition our drive using parted
 
-`parted -a optimal /dev/sdc`
+```
+parted -a optimal /dev/sdc
+```
 
 Using parted is beyond the scope of this guide, but going forward we will use `/dev/sdc1` as an example for our physical partition.
 
@@ -21,23 +23,31 @@ Using parted is beyond the scope of this guide, but going forward we will use `/
 
 To allow gpg to work properly in our terminal we must set the following environment variable
 
-`export GPG_TTY=$(tty)`
+```
+export GPG_TTY=$(tty)
+```
 
 Now we use `dd` to generate a key-file we'll use for encryption and password protect it with `gpg`.
 
 Store this key somewhere safe.
 
-`dd if=/dev/urandom bs=8388607 count=1 | gpg --symmetric --cipher-algo AES256 --output /tmp/luks-key.gpg`
+```
+dd if=/dev/urandom bs=8388607 count=1 | gpg --symmetric --cipher-algo AES256 --output /tmp/luks-key.gpg
+```
 
 ## 3 - Format the physical partition with cryptsetup
 
 Using the gpg protected key-file we'll format our physical partition
 
-`gpg --decrypt /tmp/luks-key.gpg | cryptsetup --key-size 512 --key-file - luksFormat /dev/sdc1`
+```
+gpg --decrypt /tmp/luks-key.gpg | cryptsetup --key-size 512 --key-file - luksFormat /dev/sdc1
+```
 
 We can verify the success of this operation by checking the devices luks headers. 
 
-`cryptsetup luksDump /dev/sdc1`
+```
+cryptsetup luksDump /dev/sdc1
+```
 
 ## 4 - Backup luksHeaders & alternate keys
 
@@ -45,7 +55,9 @@ As an additional precaution, we will backup our luks Headers.
 
 Again, store this file someplace safe.
 
-`cyptsetup luksHeaderBackup /dev/sdc1 --header-backup-file /tmp/luks-header.img`
+```
+cyptsetup luksHeaderBackup /dev/sdc1 --header-backup-file /tmp/luks-header.img
+```
 
 ### Adding a fallback password
 
@@ -67,29 +79,41 @@ Now we're ready to open the LUKS partition and build our LVM tables on top of it
 
 The `--allow-discards` option is to protect precious SSDs.
 
-`gpg --decrypt /tmp/luks-key.gpg | cryptsetup --key-file - luksOpen --allow-discards /dev/sdc1 drive`
+```
+gpg --decrypt /tmp/luks-key.gpg | cryptsetup --key-file - luksOpen --allow-discards /dev/sdc1 drive
+```
 
 Now create the physical volume
 
-`pvcreate /dev/mapper/drive`
+```
+pvcreate /dev/mapper/drive
+```
 
 Create volume group
 
-`vgcreate vg1 /dev/mapper/drive`
+```
+vgcreate vg1 /dev/mapper/drive
+```
 
 Create Logical Volumes
 
-swap
+Swap
 
-`lvcreate --size 10G --name swap vg1`
+```
+lvcreate --size 10G --name swap vg1
+```
 
-root
+Root
 
-`lvcreate --size 50G --name root vg1`
+```
+lvcreate --size 50G --name root vg1
+```
 
-home
+Home
 
-`lvcreate --extents 95%FREE --name home vg1`
+```
+lvcreate --extents 95%FREE --name home vg1
+```
 
 # 6 - Create Filesystems & Mount
 
@@ -112,13 +136,19 @@ In order to mount these filesystems via fstab you can follow the example below.
 
 In order to pass the right commands to your initramfs when booting with grub we set `GRUB_CMDLINE_LINUX` value to something like the following. Make sure your initramfs supports GPG protected key-files. For genkernel we build the initramfs with the following command.
 
-`genkernel --luks --lvm --gpg initramfs`
+```
+genkernel --luks --lvm --gpg initramfs
+```
 
 Set up grub-mkconfig for success in `/etc/default/grub`
 
-`GRUB_CMDLINE_LINUX="crypt_root=UUID=3f10f458-b151-4620-a47c-4a6427e6aede dolvm dobtrfs real_root=/dev/mapper/vg0-root root_trim=yes root_keydev=UUID=1DB9-8480 root_key=root0-luks-key.gpg real_resume=/dev/mapper/vg0-swap"`
+```
+GRUB_CMDLINE_LINUX="crypt_root=UUID=3f10f458-b151-4620-a47c-4a6427e6aede dolvm dobtrfs real_root=/dev/mapper/vg0-root root_trim=yes root_keydev=UUID=1DB9-8480 root_key=root0-luks-key.gpg real_resume=/dev/mapper/vg0-swap"
+```
 
 And install the configuration.
 
-`grub-mkconfig -o /boot/grub/grub.cfg`
+```
+grub-mkconfig -o /boot/grub/grub.cfg
+```
 
